@@ -10,6 +10,24 @@ This was scoped as a framework exercise, not a coverage exercise.
 - Cross-browser testing is skipped. `playwright.config.ts` only defines a `chromium` project. Adding Firefox/WebKit projects would be straightforward given the current structure, just didn't do it here.
 - CI runs on `workflow_dispatch` only, by design. The GitHub Actions workflow doesn't auto-trigger on PRs, pushes, or merges to any branch. It's meant to be run manually. Wiring up automatic triggers would just be a small addition to `.github/workflows/kandji-smoke.yml`.
 
+### What the smoke test covers, and what it deliberately doesn't
+
+Included:
+- Successful login, including MFA (TOTP).
+- Landing on the Devices page after login.
+- Core sidebar nav items render.
+- Logout returns to the login form.
+
+Not included, on purpose:
+- Invalid-login / error-state assertions.
+- Verifying actual device data or content.
+- Clicking into and verifying the other sections (Blueprints, Users, etc.) beyond just checking their nav links are visible.
+- Accessibility checks.
+- Session-persistence / reload behavior.
+- Negative MFA paths (expired code, locked account).
+
+All of the above are reasonable additions to this same smoke suite. I left them out due to the time scope of a take-home exercise, not because they don't belong here.
+
 ## Project setup
 
 ```bash
