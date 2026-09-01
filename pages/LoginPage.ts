@@ -1,5 +1,5 @@
 import { type Page, type Locator, expect } from '@playwright/test';
-import { generateTotpCode } from '../utils/helpers';
+import { generateTotpCode, generateFreshTotpCode } from '../utils/helpers';
 
 export class LoginPage {
   readonly page: Page;
@@ -7,6 +7,7 @@ export class LoginPage {
   readonly passwordInput: Locator;
   readonly continueButton: Locator;
   readonly totpInput: Locator;
+  readonly invalidCodeError: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -14,6 +15,7 @@ export class LoginPage {
     this.passwordInput = page.locator('#password');
     this.continueButton = page.getByRole('button', { name: 'Continue', exact: true });
     this.totpInput = page.getByRole('textbox', { name: /one-time code/i });
+    this.invalidCodeError = page.getByText('The code you entered is invalid');
   }
 
   async enterEmail(email: string): Promise<void> {
@@ -30,6 +32,17 @@ export class LoginPage {
     const code = generateTotpCode(secret);
     await this.totpInput.fill(code);
     await this.continueButton.click();
+
+    const codeRejected = await this.invalidCodeError
+      .waitFor({ state: 'visible', timeout: 5_000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (codeRejected) {
+      const freshCode = await generateFreshTotpCode(secret);
+      await this.totpInput.fill(freshCode);
+      await this.continueButton.click();
+    }
   }
 
   async login(email: string, password: string, totpSecret?: string): Promise<void> {

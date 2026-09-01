@@ -23,3 +23,9 @@ export const env = {
 export function generateTotpCode(secret: string = env.totpSecret): string {
   return authenticator.generate(secret);
 }
+
+export async function generateFreshTotpCode(secret: string = env.totpSecret): Promise<string> {
+  const remaining = authenticator.timeRemaining();
+  await new Promise((resolve) => setTimeout(resolve, (remaining + 1) * 1000));
+  return authenticator.generate(secret);
+}
