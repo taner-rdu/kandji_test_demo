@@ -1,0 +1,21 @@
+{
+  "name": "kandji-test-demo",
+  "version": "1.0.0",
+  "description": "Kandji QA Homework - TS/Playwright test suite",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "otplib": "^12.0.1"
+  }
+}
