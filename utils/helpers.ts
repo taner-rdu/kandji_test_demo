@@ -10,10 +10,10 @@ function requiredEnv(name: string): string {
 
 export const env = {
   get email() {
-    return requiredEnv('KANDJI_EMAIL');
+    return requiredEnv('USER_EMAIL');
   },
   get password() {
-    return requiredEnv('KANDJI_PASSWORD');
+    return requiredEnv('USER_PASSWORD');
   },
   get totpSecret() {
     return requiredEnv('KANDJI_TOTP_SECRET');
