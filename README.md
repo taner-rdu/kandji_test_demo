@@ -74,6 +74,8 @@ Every run writes two reports. Playwright's own HTML report (`playwright-report/`
 
 Allure works in two steps: the run drops raw JSON into `allure-results/`, then the CLI turns that into a static site.
 
+**Credentials end up in the reports.** Since Playwright 1.52, `fill()` records its argument in the step title, so the login password appears in Allure, the HTML report and the trace. The Playwright team closed that as won't-fix ([#35848](https://github.com/microsoft/playwright/issues/35848)), since masking the field leaves the value in snapshots and request bodies anyway. On a real project these reports would go to a private artifact store rather than public Pages.
+
 ## Environment variables
 
 | Variable | Description |
