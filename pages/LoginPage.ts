@@ -1,5 +1,7 @@
 import { type Page, type Locator, expect } from '@playwright/test';
-import { generateTotpCode, generateFreshTotpCode } from '../utils/helpers';
+import { currentTotpWindow, generateTotpCode, waitForNextTotpWindow } from '../utils/helpers';
+
+const MFA_RESULT_TIMEOUT = 10_000;
 
 export class LoginPage {
   readonly page: Page;
@@ -18,6 +20,12 @@ export class LoginPage {
     this.invalidCodeError = page.getByText('The code you entered is invalid');
   }
 
+  async login(email: string, password: string, totpSecret?: string): Promise<void> {
+    await this.enterEmail(email);
+    await this.enterPassword(password);
+    await this.submitMfaCode(totpSecret);
+  }
+
   async enterEmail(email: string): Promise<void> {
     await this.emailInput.waitFor({ state: 'visible', timeout: 20_000 });
     await this.emailInput.fill(email);
@@ -29,29 +37,40 @@ export class LoginPage {
   }
 
   async submitMfaCode(secret?: string): Promise<void> {
-    const code = generateTotpCode(secret);
-    await this.totpInput.fill(code);
-    await this.continueButton.click();
+    const first = await this.trySubmitCode(secret);
+    if (first.accepted) return;
 
-    const codeRejected = await this.invalidCodeError
-      .waitFor({ state: 'visible', timeout: 5_000 })
-      .then(() => true)
-      .catch(() => false);
+    // Only a new window yields different digits, and detecting the failure has
+    // often rolled it over already.
+    if (currentTotpWindow() === first.window) await waitForNextTotpWindow();
 
-    if (codeRejected) {
-      const freshCode = await generateFreshTotpCode(secret);
-      await this.totpInput.fill(freshCode);
-      await this.continueButton.click();
-    }
+    const retry = await this.trySubmitCode(secret);
+    if (retry.accepted) return;
+
+    throw new Error('MFA failed after two codes.');
   }
 
-  async login(email: string, password: string, totpSecret?: string): Promise<void> {
-    await this.enterEmail(email);
-    await this.enterPassword(password);
-    await this.submitMfaCode(totpSecret);
+  /** Submits a code as given: no generation, no retry. For negative tests. */
+  async submitCodeOnce(code: string): Promise<void> {
+    await this.totpInput.fill(code);
+    await this.continueButton.click();
   }
 
   async expectLoginFormVisible(): Promise<void> {
     await expect(this.emailInput).toBeVisible();
+  }
+
+  private async trySubmitCode(secret?: string): Promise<{ accepted: boolean; window: number }> {
+    const code = await generateTotpCode(secret);
+    const window = currentTotpWindow();
+    await this.submitCodeOnce(code);
+
+    // Acceptance is the MFA step going away.
+    const accepted = await this.totpInput
+      .waitFor({ state: 'detached', timeout: MFA_RESULT_TIMEOUT })
+      .then(() => true)
+      .catch(() => false);
+
+    return { accepted, window };
   }
 }
