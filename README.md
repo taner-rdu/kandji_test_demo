@@ -72,7 +72,7 @@ The same thing in Docker, which is what CI does:
 
 ```bash
 docker build -t kandji-test-demo .
-docker run --rm --env-file .env kandji-test-demo npx playwright test --grep @smoke
+docker run --rm --ipc=host --env-file .env kandji-test-demo npx playwright test --grep @smoke
 ```
 
 The image is built on `mcr.microsoft.com/playwright:v1.62.1-jammy`, which already ships the matching browser binaries, so there's no `playwright install` step inside the container.
