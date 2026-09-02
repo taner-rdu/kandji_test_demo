@@ -1,5 +1,5 @@
 import { type Page, type Locator, expect } from '@playwright/test';
-import { currentTotpWindow, generateTotpCode, waitForNextTotpWindow } from '../utils/helpers';
+import { currentTotpWindow, generateTotpCode, waitForNextTotpWindow } from '../utils/totp';
 
 const MFA_RESULT_TIMEOUT = 10_000;
 
@@ -23,16 +23,20 @@ export class LoginPage {
   async login(email: string, password: string, totpSecret?: string): Promise<void> {
     await this.enterEmail(email);
     await this.enterPassword(password);
+    await this.submitCredentials();
     await this.submitMfaCode(totpSecret);
   }
 
   async enterEmail(email: string): Promise<void> {
-    await this.emailInput.waitFor({ state: 'visible', timeout: 20_000 });
     await this.emailInput.fill(email);
   }
 
   async enterPassword(password: string): Promise<void> {
     await this.passwordInput.fill(password);
+  }
+
+  /** Submits the credentials step, advancing to MFA. */
+  async submitCredentials(): Promise<void> {
     await this.continueButton.click();
   }
 

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { DevicesPage } from '../pages/DevicesPage';
 import { Sidebar } from '../pages/Sidebar';
-import { env } from '../utils/helpers';
+import { env } from '../config/env';
 
 test.describe('Kandji login', () => {
   test('full login and logout flow', { tag: '@smoke' }, async ({ page }) => {
@@ -24,6 +24,7 @@ test.describe('Kandji login', () => {
     await page.goto('/');
     await loginPage.enterEmail(env.email);
     await loginPage.enterPassword(env.password);
+    await loginPage.submitCredentials();
     await loginPage.submitCodeOnce('000000');
 
     await expect(loginPage.invalidCodeError).toBeVisible();

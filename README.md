@@ -98,9 +98,10 @@ Worth knowing: if your clock is off by more than a few seconds, every code will 
 ## Project structure
 
 ```
+config/         Environment/config loading (env.ts)
 pages/          Page Object Model classes (LoginPage, DevicesPage, Sidebar)
 tests/          Test specs
-utils/          Shared helpers (env loading, TOTP generation, etc.)
+utils/          Shared utilities (totp.ts -- MFA code generation)
 Dockerfile      Test runner image (Playwright + browsers preinstalled)
 .github/workflows/kandji-smoke.yml   Manually-triggered CI workflow
 ```

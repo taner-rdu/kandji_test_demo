@@ -1,5 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
+import { env } from './config/env';
 
 dotenv.config();
 
@@ -18,7 +19,7 @@ export default defineConfig({
     ['list'],
   ],
   use: {
-    baseURL: process.env.KANDJI_URL,
+    baseURL: env.baseUrl,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
