@@ -28,12 +28,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: docker/setup-buildx-action@v3
+
       - name: Build Docker image
-        run: docker build -t kandji-test-demo .
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          tags: kandji-test-demo
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Run Playwright tests
         run: |
-          docker run --rm \
+          docker run --rm --ipc=host \
             -e KANDJI_URL="${{ secrets.KANDJI_URL }}" \
             -e USER_EMAIL="${{ secrets.USER_EMAIL }}" \
             -e USER_PASSWORD="${{ secrets.USER_PASSWORD }}" \
