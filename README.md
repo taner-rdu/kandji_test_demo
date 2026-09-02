@@ -4,12 +4,15 @@ Kandji QA take-home exercise. TypeScript / Playwright test framework with a Page
 
 ## Scope notes
 
-This was scoped as a framework exercise, not a coverage exercise.
+This was scoped as a framework exercise, not a coverage exercise. Everything below is a
+deliberate decision for a take-home, not something I'd consider missing from a real suite --
+in each case I've noted what I'd do instead on a production project.
 
 - Only two tests are included (the login/devices/logout flow, and a check that a bad MFA code is rejected), both tagged `@smoke`. I focused on building an extendable, maintainable test framework (page objects, env/config handling, CI/Docker setup) rather than writing out a full test suite.
 - Cross-browser testing is skipped. `playwright.config.ts` only defines a `chromium` project. Adding Firefox/WebKit projects would be straightforward given the current structure, just didn't do it here.
 - No `storageState` session reuse. Playwright can save an authenticated session once and let later tests start already logged in, skipping the login UI and MFA. Both tests here are *about* login, so neither could use it anyway: a login test has to start logged out. It's worth adding the moment there's a test that begins past the login screen, and with a TOTP wait in the loop it saves real time per test.
-- CI runs on `workflow_dispatch` only, by design. The GitHub Actions workflow doesn't auto-trigger on PRs, pushes, or merges to any branch. It's meant to be run manually. Wiring up automatic triggers would just be a small addition to `.github/workflows/kandji-smoke.yml`.
+- CI is triggered manually. The workflow runs typecheck and lint, then the smoke tests in Docker, but only when I start it. On a real project it would run on every pull request. The trigger is one line in `.github/workflows/kandji-smoke.yml`.
+- Tests run in parallel locally but serially in CI (`workers: 1`), because there's a single shared Kandji login. Two tests signing in as the same user at the same time is fine; twenty would mean session collisions and MFA rate-limiting. The real fix is a pool of test accounts, one per worker, and for a larger suite Playwright's `--shard` flag splitting the run across parallel CI jobs with `blob` reports merged afterwards via `merge-reports`. Neither is worth setting up for two tests.
 
 ### What the smoke test covers, and what it deliberately doesn't
 
@@ -56,6 +59,8 @@ npm test              # headless run
 npm run test:headed   # headed, watch the browser
 npm run test:ui       # Playwright UI mode
 npm run report        # open the last HTML report
+npm run typecheck     # tsc --noEmit; Playwright transpiles without typechecking
+npm run lint          # eslint, incl. missing-await detection
 ```
 
 In Docker (mirrors what CI runs):
