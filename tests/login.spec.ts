@@ -10,6 +10,7 @@ test.describe('Kandji login', () => {
     const devicesPage = new DevicesPage(page);
     const sidebar = new Sidebar(page);
 
+    await devicesPage.dismissAnnouncementsWhenShown();
     await page.goto('/');
     await loginPage.login(env.email, env.password, env.totpSecret);
     await devicesPage.expectLoaded({ timeout: 10_000 });

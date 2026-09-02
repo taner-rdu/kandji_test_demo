@@ -13,18 +13,14 @@ export class DevicesPage {
 
   async expectLoaded(options?: { timeout?: number }): Promise<void> {
     await expect(this.page).toHaveURL(/\/devices/i, options);
-
-    const deadline = Date.now() + (options?.timeout ?? 5_000);
-    while (Date.now() < deadline) {
-      if (await this.announcementDismissButton.isVisible().catch(() => false)) {
-        await this.announcementDismissButton.click().catch(() => {});
-      }
-      if (await this.heading.isVisible().catch(() => false)) {
-        return;
-      }
-      await this.page.waitForTimeout(250);
-    }
-
     await expect(this.heading).toBeVisible(options);
+  }
+
+  /** Register before navigating: dismisses the announcement whenever it blocks an action. */
+  async dismissAnnouncementsWhenShown(): Promise<void> {
+    await this.page.addLocatorHandler(
+      this.announcementDismissButton,
+      async (button) => button.click(),
+    );
   }
 }
