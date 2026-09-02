@@ -28,7 +28,6 @@ export class LoginPage {
   }
 
   async enterEmail(email: string): Promise<void> {
-    await this.emailInput.waitFor({ state: 'visible', timeout: 20_000 });
     await this.emailInput.fill(email);
   }
 
