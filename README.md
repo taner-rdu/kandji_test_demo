@@ -74,22 +74,6 @@ Every run writes two reports. Playwright's own HTML report (`playwright-report/`
 
 Allure works in two steps: the run drops raw JSON into `allure-results/`, then the CLI turns that into a static site.
 
-```bash
-npx playwright test --grep @smoke
-npm run allure:generate   # allure-results/ -> allure-report/
-npm run allure:open       # serves allure-report/
-```
-
-`npm run allure:serve` does both in one go against a temp directory, which is usually what you want locally.
-
-The CLI is Java-based, so generating a report needs a JDK on the machine. Running the tests doesn't.
-
-In CI the container writes `allure-results/` to a mounted volume, the runner generates the report and publishes it to GitHub Pages, so the latest run is a URL rather than a zip someone has to download and unpack. The raw results and both report directories are also kept as build artifacts for 14 days.
-
-Pages needs to be enabled once on the repo, under Settings → Pages → Source: GitHub Actions. Note the report is public if the repo is, so it shouldn't carry anything sensitive: it holds test names, timings, and failure screenshots.
-
-I left the Allure history/trend feature out. It needs the previous run's `history/` folder copied back into `allure-results/` before generating, usually by pulling it off the `gh-pages` branch, and with a manually triggered workflow there isn't a meaningful trend to plot yet.
-
 ## Environment variables
 
 | Variable | Description |
