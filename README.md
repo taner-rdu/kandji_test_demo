@@ -6,17 +6,17 @@ My Kandji QA take-home. Playwright and TypeScript, page objects, runs in Docker,
 
 I treated this as a framework exercise rather than a coverage exercise, so most of the effort went into structure. The calls below are all deliberate, and I've said what I'd do differently on a real project.
 
-**Two tests, both tagged `@smoke`.** The happy-path login flow, and one negative MFA case. I'd rather hand in a small suite on solid foundations (page objects, config handling, Docker, CI) than a longer list of tests with nothing underneath them.
+**Two tests, both tagged `@smoke`.** The happy-path login flow, and one negative MFA case. I'd rather hand in a small suite on solid foundations (page objects, config handling, Docker, CI) than a longer list of tests with nothing under them.
 
 **Chromium only.** `playwright.config.ts` defines one project. Firefox and WebKit are a few lines each if you want them.
 
-**No `storageState`.** Playwright can save a logged-in session so other tests skip the login screen entirely. Both of my tests are about logging in, so neither could use it anyway, since a login test has to start logged out. The moment there's a test that starts past the login screen it's worth adding, especially with a TOTP wait in the mix.
+**No `storageState`.** Playwright can save a logged-in session so other tests skip the login screen entirely. Both of my tests are about logging in, so neither could use it anyway, since a login test has to start logged out. The moment there's a test that starts past the login screen it's worth adding.
 
 **CI runs when I trigger it.** The workflow does typecheck and lint, then the smoke tests in Docker. On a real project it would run on every pull request, which is one line in the workflow file.
 
-**Serial in CI.** Locally the tests run in parallel, but CI pins `workers: 1`. There's a single shared Kandji login, and two tests signing in at once is fine where twenty wouldn't be. The proper fix is a pool of test accounts, one per worker. Past that you'd shard with `--shard` across parallel jobs and merge the blob reports with `merge-reports`. Neither is worth it for two tests.
+**Serial in CI.** Locally the tests run in parallel, but CI pins `workers: 1`. There's a single shared Kandji login. Two tests signing in at once is fine. Twenty wouldn't be. The proper fix is a pool of test accounts, one per worker. Past that you'd shard with `--shard` across parallel jobs and merge the blob reports with `merge-reports`. Neither is worth it for two tests.
 
-### What the tests actually check
+### What the tests check
 
 `full login and logout flow`
 
@@ -38,7 +38,7 @@ Left out on purpose:
 - Session persistence across reloads
 - Other MFA failure modes, like expired codes or a locked account
 
-None of that is out of place in a smoke suite. It's a time call, not a judgment about what belongs.
+All of it belongs in a smoke suite. I left it out for time.
 
 ## Setup
 
@@ -60,15 +60,13 @@ cp .env.example .env
 I run these straight from the IDE day to day. It's quicker, and UI mode, debugging and traces all just work. Docker is there so CI gets the same environment every time.
 
 ```bash
-npm test              # headless
-npm run test:headed   # watch it drive the browser
+npm test              # headless run
+npm run test:headed   # headed, watch the browser
 npm run test:ui       # Playwright UI mode
 npm run report        # open the last HTML report
-npm run typecheck     # tsc --noEmit
-npm run lint          # eslint
+npm run typecheck     # tsc --noEmit; Playwright transpiles without typechecking
+npm run lint          # eslint, incl. missing-await detection
 ```
-
-Playwright compiles TypeScript with esbuild, which throws the types away without checking them, so nothing catches a type error unless you run `tsc` yourself. Lint is mostly there for `no-floating-promises`, which catches a missing `await`. That's valid TypeScript and a broken test.
 
 The same thing in Docker, which is what CI does:
 
