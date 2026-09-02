@@ -74,13 +74,7 @@ Every run writes two reports. Playwright's own HTML report (`playwright-report/`
 
 Allure works in two steps: the run drops raw JSON into `allure-results/`, then the CLI turns that into a static site.
 
-**Credentials in reports.** Playwright names each step after its arguments, so `fill(password)` becomes a step called `Fill "hunter2"`. That title is written once and shows up in the trace, the HTML report and Allure alike, which on a public repo means a live password on a public URL. It caught me out here: the first Pages deploy published one.
-
-The behaviour arrived in Playwright 1.52. It was raised as [#35848](https://github.com/microsoft/playwright/issues/35848) and closed without a fix, on the reasoning that masking `type=password` would only hide the obvious leak while request bodies and DOM snapshots stay readable, and that the real answer is to control who can read the reports. So `LoginPage.enterPassword` sets the value through the DOM instead, which keeps it out of the step title.
-
-That is a mitigation, not a fix, and it's worth being precise about what it buys. Checking with a canary: the value is gone from `allure-results/`, which is what gets published. It is still in the trace, because the DOM snapshot taken on the next action records the field's value, and because the login request body is recorded too. Neither is something a page object can avoid, which is the maintainers' point about a false sense of security.
-
-So the published report is clean and the trace is not. On a real project the reports would go to a private artifact store rather than public Pages, and the credential would be a scoped test account nobody minds rotating.
+**Credentials.** Since Playwright 1.52, `fill()` records its argument in the step title, so a filled password reaches the report ([#35848](https://github.com/microsoft/playwright/issues/35848), closed without a fix). `LoginPage.enterPassword` sets the value through the DOM to keep it out. Traces still hold it in snapshots and request bodies, so on a real project the reports would go to a private artifact store rather than public Pages.
 
 ## Environment variables
 
