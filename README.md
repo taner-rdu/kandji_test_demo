@@ -1,36 +1,46 @@
 # kandji_test_demo
 
-Kandji QA take-home exercise. TypeScript / Playwright test framework with a Page Object Model, Dockerized test execution, and a manually-triggered GitHub Actions workflow.
+My Kandji QA take-home. Playwright and TypeScript, page objects, runs in Docker, with a GitHub Actions workflow.
 
-## Scope notes
+## Scope
 
-This was scoped as a framework exercise, not a coverage exercise.
+I treated this as a framework exercise rather than a coverage exercise, so most of the effort went into structure. The calls below are all deliberate, and I've said what I'd do differently on a real project.
 
-- Only two tests are included (the login/devices/logout flow, and a check that a bad MFA code is rejected), both tagged `@smoke`. I focused on building an extendable, maintainable test framework (page objects, env/config handling, CI/Docker setup) rather than writing out a full test suite.
-- Cross-browser testing is skipped. `playwright.config.ts` only defines a `chromium` project. Adding Firefox/WebKit projects would be straightforward given the current structure, just didn't do it here.
-- No `storageState` session reuse. Playwright can save an authenticated session once and let later tests start already logged in, skipping the login UI and MFA. Both tests here are *about* login, so neither could use it anyway: a login test has to start logged out. It's worth adding the moment there's a test that begins past the login screen, and with a TOTP wait in the loop it saves real time per test.
-- CI runs on `workflow_dispatch` only, by design. The GitHub Actions workflow doesn't auto-trigger on PRs, pushes, or merges to any branch. It's meant to be run manually. Wiring up automatic triggers would just be a small addition to `.github/workflows/kandji-smoke.yml`.
+**Two tests, both tagged `@smoke`.** The happy-path login flow, and one negative MFA case. I'd rather hand in a small suite on solid foundations (page objects, config handling, Docker, CI) than a longer list of tests with nothing underneath them.
 
-### What the smoke test covers, and what it deliberately doesn't
+**Chromium only.** `playwright.config.ts` defines one project. Firefox and WebKit are a few lines each if you want them.
 
-Included:
-- Successful login, including MFA (TOTP).
-- A wrong MFA code getting rejected.
-- Landing on the Devices page after login.
-- Core sidebar nav items render.
-- Logout returns to the login form.
+**No `storageState`.** Playwright can save a logged-in session so other tests skip the login screen entirely. Both of my tests are about logging in, so neither could use it anyway, since a login test has to start logged out. The moment there's a test that starts past the login screen it's worth adding, especially with a TOTP wait in the mix.
 
-Not included, on purpose:
-- Invalid-login / error-state assertions.
-- Verifying actual device data or content.
-- Clicking into and verifying the other sections (Blueprints, Users, etc.) beyond just checking their nav links are visible.
-- Accessibility checks.
-- Session-persistence / reload behavior.
-- The rest of the negative MFA paths (expired code, locked account).
+**CI runs when I trigger it.** The workflow does typecheck and lint, then the smoke tests in Docker. On a real project it would run on every pull request, which is one line in the workflow file.
 
-All of the above are reasonable additions to this same smoke suite. I left them out due to the time scope of a take-home exercise, not because they don't belong here.
+**Serial in CI.** Locally the tests run in parallel, but CI pins `workers: 1`. There's a single shared Kandji login, and two tests signing in at once is fine where twenty wouldn't be. The proper fix is a pool of test accounts, one per worker. Past that you'd shard with `--shard` across parallel jobs and merge the blob reports with `merge-reports`. Neither earns its keep at two tests.
 
-## Project setup
+### What the tests actually check
+
+`full login and logout flow`
+
+- Email, password, and a TOTP code generated on the spot
+- Lands on Devices
+- Sidebar nav renders: Devices, Blueprints, Library, Users, Detections, Vulnerabilities
+- Logout puts you back on the login form
+
+`reject an invalid MFA code`
+
+- A bad code is rejected and the error shows
+
+Left out on purpose:
+
+- Bad username/password error states
+- Any assertion about real device data
+- Clicking into Blueprints, Users and the rest. I only check that the nav links render
+- Accessibility
+- Session persistence across reloads
+- Other MFA failure modes, like expired codes or a locked account
+
+None of that is out of place in a smoke suite. It's a time call, not a judgment about what belongs.
+
+## Setup
 
 ```bash
 git clone <repo-url>
@@ -39,70 +49,68 @@ npm ci
 npx playwright install --with-deps chromium
 ```
 
-Copy the example env file and fill in real values (see Environment variables below):
+Then copy the env file and fill it in (details below):
 
 ```bash
 cp .env.example .env
 ```
 
-### Running the tests
+## Running
 
-Tests can run either directly from the IDE or inside Docker. I prefer running directly from the IDE for local development, it's faster to iterate, and Playwright UI mode, native debugging and traces just work. Docker is there to guarantee a consistent, reproducible environment for CI.
-
-Locally (IDE / host):
+I run these straight from the IDE day to day. It's quicker, and UI mode, debugging and traces all just work. Docker is there so CI gets the same environment every time.
 
 ```bash
-npm test              # headless run
-npm run test:headed   # headed, watch the browser
+npm test              # headless
+npm run test:headed   # watch it drive the browser
 npm run test:ui       # Playwright UI mode
 npm run report        # open the last HTML report
+npm run typecheck     # tsc --noEmit
+npm run lint          # eslint
 ```
 
-In Docker (mirrors what CI runs):
+Those last two are worth a word. Playwright compiles TypeScript with esbuild, which throws the types away without checking them, so nothing catches a type error unless you run `tsc` yourself. The lint setup mostly earns its keep on one rule, `no-floating-promises`, which catches a missing `await`. That's valid TypeScript and a broken test.
+
+The same thing in Docker, which is what CI does:
 
 ```bash
 docker build -t kandji-test-demo .
 docker run --rm --env-file .env kandji-test-demo npx playwright test --grep @smoke
 ```
 
-The Docker image is based on `mcr.microsoft.com/playwright:v1.62.1-jammy`, which already has matching browser binaries installed, so there's no separate `playwright install` step needed inside the container.
+The image is built on `mcr.microsoft.com/playwright:v1.62.1-jammy`, which already ships the matching browser binaries, so there's no `playwright install` step inside the container.
 
 ## Environment variables
 
-Defined in `.env` locally (see `.env.example`):
-
 | Variable | Description |
 |---|---|
-| `KANDJI_URL` | Base URL of the Kandji tenant under test |
+| `KANDJI_URL` | Base URL of the tenant under test |
 | `USER_EMAIL` | Login email |
 | `USER_PASSWORD` | Login password |
-| `KANDJI_TOTP_SECRET` | TOTP seed used to generate MFA codes at login time (via `otplib`) |
+| `KANDJI_TOTP_SECRET` | TOTP seed, used to generate MFA codes at login (via `otplib`) |
 
-`.env` is git-ignored and never committed.
+All four are required and read through one place, `config/env.ts`, so a missing one fails immediately with a clear message instead of something confusing further along.
 
-### Credential handling in CI
+`.env` is git-ignored and never committed. CI reads the same four values from GitHub Actions repository secrets and passes them into the container.
 
-CI (`.github/workflows/kandji-smoke.yml`) sources these same values from GitHub Actions Repository Secrets and passes them into the Docker container as environment variables at run time.
+Repository secrets are fine for an exercise. On a real project I'd pull them from something like AWS Secrets Manager so local and CI share one source, rather than keeping the values in two places.
 
-Repository secrets were good enough for this exercise. For a real production use case, I'd move these credentials to a dedicated secrets manager (e.g. AWS Secrets Manager) that both local dev and CI can pull from at runtime, instead of keeping values duplicated between a local `.env` and GitHub Secrets.
+## MFA
 
-## A note on MFA
+Login needs a TOTP code, and those roll over every 30 seconds. That's where nearly all the flakiness came from.
 
-Logging in needs a TOTP code, and those change every 30 seconds. That was the main thing making this suite flaky, so there are two things in place now.
+The fix was to stop using codes that are about to expire. If the current one has less than five seconds left, the suite waits for the next window before typing anything. A code could be perfectly valid when generated and dead by the time the server checked it.
 
-The suite won't use a code that's about to change. If there's less than 5 seconds left on the current one, it waits a few seconds for the next one before typing anything in. That's what fixed the flakiness: a code could be perfectly valid when generated and already expired by the time the server got around to checking it.
+If a code still gets rejected, it tries once more, but only after the window rolls over. Sending the same digits again would just be refused, and Kandji won't take a code twice anyway.
 
-If a code still gets rejected, it tries one more time. It waits for the code to change before retrying, because sending the same digits again would just get refused, and because Kandji won't accept a code twice.
+One thing to watch: if your machine's clock is off by more than a few seconds, every code fails and retrying won't save you. Timezone doesn't matter, only whether the actual time is right. That's also the one part of this that can behave differently in Docker, since the VM's clock can drift after your laptop sleeps.
 
-Worth knowing: if your clock is off by more than a few seconds, every code will be rejected and retrying won't help. That's also the only part of this that can behave differently in Docker than on your own machine, since a Docker VM can drift after your laptop sleeps. The timezone doesn't matter, only whether the actual time is right.
-
-## Project structure
+## Layout
 
 ```
-config/         Environment/config loading (env.ts)
-pages/          Page Object Model classes (LoginPage, DevicesPage, Sidebar)
-tests/          Test specs
-utils/          Shared utilities (totp.ts -- MFA code generation)
-Dockerfile      Test runner image (Playwright + browsers preinstalled)
-.github/workflows/kandji-smoke.yml   Manually-triggered CI workflow
+config/     env.ts, the one place environment variables are read
+pages/      Page objects: LoginPage, DevicesPage, Sidebar
+tests/      Specs
+utils/      totp.ts, MFA code generation
+Dockerfile  Test image, browsers preinstalled
+.github/workflows/kandji-smoke.yml
 ```
