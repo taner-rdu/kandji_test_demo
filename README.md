@@ -14,7 +14,7 @@ I treated this as a framework exercise rather than a coverage exercise, so most 
 
 **CI runs when I trigger it.** The workflow does typecheck and lint, then the smoke tests in Docker. On a real project it would run on every pull request, which is one line in the workflow file.
 
-**Serial in CI.** Locally the tests run in parallel, but CI pins `workers: 1`. There's a single shared Kandji login, and two tests signing in at once is fine where twenty wouldn't be. The proper fix is a pool of test accounts, one per worker. Past that you'd shard with `--shard` across parallel jobs and merge the blob reports with `merge-reports`. Neither earns its keep at two tests.
+**Serial in CI.** Locally the tests run in parallel, but CI pins `workers: 1`. There's a single shared Kandji login, and two tests signing in at once is fine where twenty wouldn't be. The proper fix is a pool of test accounts, one per worker. Past that you'd shard with `--shard` across parallel jobs and merge the blob reports with `merge-reports`. Neither is worth it for two tests.
 
 ### What the tests actually check
 
@@ -68,7 +68,7 @@ npm run typecheck     # tsc --noEmit
 npm run lint          # eslint
 ```
 
-Those last two are worth a word. Playwright compiles TypeScript with esbuild, which throws the types away without checking them, so nothing catches a type error unless you run `tsc` yourself. The lint setup mostly earns its keep on one rule, `no-floating-promises`, which catches a missing `await`. That's valid TypeScript and a broken test.
+Playwright compiles TypeScript with esbuild, which throws the types away without checking them, so nothing catches a type error unless you run `tsc` yourself. Lint is mostly there for `no-floating-promises`, which catches a missing `await`. That's valid TypeScript and a broken test.
 
 The same thing in Docker, which is what CI does:
 
