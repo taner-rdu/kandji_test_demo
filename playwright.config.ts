@@ -2,8 +2,6 @@ import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 import { env } from './config/env';
 
-// Must run before defineConfig evaluates; env reads lazily, so import order is
-// irrelevant, but the values have to be in process.env by the time it does.
 dotenv.config();
 
 export default defineConfig({
