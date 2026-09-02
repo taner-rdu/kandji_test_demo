@@ -6,5 +6,5 @@
     "esModuleInterop": true,
     "types": ["node", "@playwright/test"]
   },
-  "include": ["tests/**/*.ts", "pages/**/*.ts", "utils/**/*.ts", "playwright.config.ts"]
+  "include": ["tests/**/*.ts", "config/**/*.ts", "pages/**/*.ts", "utils/**/*.ts", "playwright.config.ts"]
 }

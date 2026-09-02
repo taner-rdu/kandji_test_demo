@@ -1,9 +1,10 @@
 import { authenticator } from 'otplib';
+import { env } from '../config/env';
 
 /**
  * TOTP is defined against the UTC epoch, so the local timezone is irrelevant --
- * only absolute clock accuracy matters. That is the one thing that genuinely
- * differs between a host run and a container run, so see measureClockSkewSeconds.
+ * only absolute clock accuracy matters. A host whose clock has drifted by more
+ * than a few seconds will have every code rejected, and retrying will not help.
  */
 export const TOTP_STEP_SECONDS = 30;
 
@@ -14,27 +15,7 @@ export const TOTP_STEP_SECONDS = 30;
  */
 export const MIN_VALIDITY_SECONDS = 5;
 
-function requiredEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
-
-export const env = {
-  get email() {
-    return requiredEnv('USER_EMAIL');
-  },
-  get password() {
-    return requiredEnv('USER_PASSWORD');
-  },
-  get totpSecret() {
-    return requiredEnv('KANDJI_TOTP_SECRET');
-  },
-};
-
-export function sleep(ms: number): Promise<void> {
+function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, ms)));
 }
 
