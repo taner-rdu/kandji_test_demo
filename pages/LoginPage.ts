@@ -31,8 +31,21 @@ export class LoginPage {
     await this.emailInput.fill(email);
   }
 
+  /**
+   * Set through the DOM rather than filled. Since Playwright 1.52 `fill()`
+   * records its argument in the step title, which lands in the HTML report and
+   * the trace: https://github.com/microsoft/playwright/issues/35848
+   *
+   * The native setter (not `input.value =`) is what makes React register the
+   * change; it tracks the last value it wrote and ignores a plain assignment.
+   */
   async enterPassword(password: string): Promise<void> {
-    await this.passwordInput.fill(password);
+    await this.passwordInput.evaluate((input: HTMLInputElement, value: string) => {
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+      if (!descriptor?.set) throw new Error('No native value setter on HTMLInputElement.');
+      descriptor.set.call(input, value);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }, password);
   }
 
   /** Submits the credentials step, advancing to MFA. */
