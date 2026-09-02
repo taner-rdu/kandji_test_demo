@@ -8,6 +8,7 @@ This was scoped as a framework exercise, not a coverage exercise.
 
 - Only two tests are included (the login/devices/logout flow, and a check that a bad MFA code is rejected), both tagged `@smoke`. I focused on building an extendable, maintainable test framework (page objects, env/config handling, CI/Docker setup) rather than writing out a full test suite.
 - Cross-browser testing is skipped. `playwright.config.ts` only defines a `chromium` project. Adding Firefox/WebKit projects would be straightforward given the current structure, just didn't do it here.
+- No `storageState` session reuse. Playwright can save an authenticated session once and let later tests start already logged in, skipping the login UI and MFA. Both tests here are *about* login, so neither could use it anyway: a login test has to start logged out. It's worth adding the moment there's a test that begins past the login screen, and with a TOTP wait in the loop it saves real time per test.
 - CI runs on `workflow_dispatch` only, by design. The GitHub Actions workflow doesn't auto-trigger on PRs, pushes, or merges to any branch. It's meant to be run manually. Wiring up automatic triggers would just be a small addition to `.github/workflows/kandji-smoke.yml`.
 
 ### What the smoke test covers, and what it deliberately doesn't
