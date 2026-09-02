@@ -14,14 +14,18 @@ in each case I've noted what I'd do instead on a production project.
 - CI is triggered manually. The workflow runs typecheck and lint, then the smoke tests in Docker, but only when I start it. On a real project it would run on every pull request. The trigger is one line in `.github/workflows/kandji-smoke.yml`.
 - Tests run in parallel locally but serially in CI (`workers: 1`), because there's a single shared Kandji login. Two tests signing in as the same user at the same time is fine; twenty would mean session collisions and MFA rate-limiting. The real fix is a pool of test accounts, one per worker, and for a larger suite Playwright's `--shard` flag splitting the run across parallel CI jobs with `blob` reports merged afterwards via `merge-reports`. Neither is worth setting up for two tests.
 
-### What the smoke test covers, and what it deliberately doesn't
+### What the smoke tests cover, and what they deliberately don't
 
-Included:
-- Successful login, including MFA (TOTP).
-- A wrong MFA code getting rejected.
-- Landing on the Devices page after login.
-- Core sidebar nav items render.
+Two tests, both tagged `@smoke`:
+
+**`full login and logout flow`** -- the happy path, end to end:
+- Login with email, password and a TOTP code generated at run time.
+- Landing on the Devices page.
+- Core sidebar nav items render (Devices, Blueprints, Library, Users, Detections, Vulnerabilities).
 - Logout returns to the login form.
+
+**`reject an invalid MFA code`** -- the one negative path:
+- A wrong code is rejected and the error message is shown.
 
 Not included, on purpose:
 - Invalid-login / error-state assertions.
