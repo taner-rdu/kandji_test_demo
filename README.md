@@ -8,6 +8,8 @@ I treated this as a framework exercise rather than a coverage exercise, so most 
 
 **No `storageState`.** Playwright can save a logged-in session so other tests skip the login screen entirely. The moment there's a test that starts past the login screen it's worth adding.
 
+**`.env` for config.** Four values, read in one place through `config/env.ts`. Per-environment config files would do the same job, and a bigger suite could create users at runtime and be designed around that rather than one shared account.
+
 **CI runs when I trigger it.** The workflow does typecheck, lint, then the smoke tests in Docker, and publishes an Allure report to GitHub Pages. On a real project it would run on every pull request, which is one line in the workflow file.
 
 **Serial in CI.** CI runs one test at a time. I didn't bother splitting the work up for two tests, but it's easy to update: mark anything order-dependent with test.describe.serial and let the rest spread across workers. If the suite gets big enough to outgrow one machine, --shard breaks it across parallel CI jobs and merge-reports stitches the reports back together.
@@ -70,11 +72,9 @@ The image is built on `mcr.microsoft.com/playwright:v1.62.1-jammy`, which alread
 
 ## Reports
 
-Every run writes two reports. Playwright's own HTML report (`playwright-report/`, `npm run report`) is what I use while debugging locally, since it has the traces attached. Allure is the one meant to be read by other people.
+Playwright's own HTML report lands in `playwright-report/` and opens with `npm run report`, traces attached. Allure results go to `allure-results/`.
 
-Allure works in two steps: the run drops raw JSON into `allure-results/`, then the CLI turns that into a static site.
-
-**Credentials end up in the reports.** Since Playwright 1.52, `fill()` records its argument in the step title, so the login password appears in Allure, the HTML report and the trace. The Playwright team closed that as won't-fix ([#35848](https://github.com/microsoft/playwright/issues/35848)), since masking the field leaves the value in snapshots and request bodies anyway. On a real project these reports would go to a private artifact store rather than public Pages.
+It's published to GitHub Pages here so the report is a link anyone can open. That's a demo choice. The reports contain the login password, because `fill()` records its argument in the step title and the Playwright team closed that as won't-fix ([#35848](https://github.com/microsoft/playwright/issues/35848)). Masking the field still leaves the value in snapshots and request bodies. A real setup would host them somewhere access-controlled.
 
 ## Environment variables
 
