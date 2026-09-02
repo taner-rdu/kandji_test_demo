@@ -8,7 +8,7 @@ I treated this as a framework exercise rather than a coverage exercise, so most 
 
 **No `storageState`.** Playwright can save a logged-in session so other tests skip the login screen entirely. Both of my tests are about logging in, so neither could use it anyway, since a login test has to start logged out. The moment there's a test that starts past the login screen it's worth adding.
 
-**CI runs when I trigger it.** The workflow does typecheck, lint, then the smoke tests in Docker. On a real project it would run on every pull request, which is one line in the workflow file.
+**CI runs when I trigger it.** The workflow does typecheck, lint, then the smoke tests in Docker, and publishes an Allure report to GitHub Pages. On a real project it would run on every pull request, which is one line in the workflow file.
 
 **Serial in CI.** CI runs one test at a time. I didn't bother splitting the work up for two tests, but it's easy to update: mark anything order-dependent with test.describe.serial and let the rest spread across workers. If the suite gets big enough to outgrow one machine, --shard breaks it across parallel CI jobs and merge-reports stitches the reports back together.
 
@@ -67,6 +67,12 @@ docker run --rm --ipc=host --env-file .env kandji-test-demo npx playwright test 
 ```
 
 The image is built on `mcr.microsoft.com/playwright:v1.62.1-jammy`, which already ships the matching browser binaries, so there's no `playwright install` step inside the container.
+
+## Reports
+
+Every run writes two reports. Playwright's own HTML report (`playwright-report/`, `npm run report`) is what I use while debugging locally, since it has the traces attached. Allure is the one meant to be read by other people.
+
+Allure works in two steps: the run drops raw JSON into `allure-results/`, then the CLI turns that into a static site.
 
 ## Environment variables
 
