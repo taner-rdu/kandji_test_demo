@@ -1,12 +1,12 @@
 # kandji_test_demo
 
-I treated this as a framework exercise rather than a coverage exercise, so most of the effort went into structure. The calls below are all deliberate, and I've listed what I'd do differently on a real project.
+I treated this as a framework exercise rather than a coverage exercise, so most of the effort went into structure. The decisions below are all deliberate, and I've listed what I'd do differently on a real project.
 
 **Two tests, both tagged `@smoke`.** The happy-path login flow, and one negative MFA case.
 
 **Chromium only.** `playwright.config.ts` defines one project. Firefox and WebKit are a few lines each if you want them.
 
-**No `storageState`.** Playwright can save a logged-in session so other tests skip the login screen entirely. Both of my tests are about logging in, so neither could use it anyway, since a login test has to start logged out. The moment there's a test that starts past the login screen it's worth adding.
+**No `storageState`.** Playwright can save a logged-in session so other tests skip the login screen entirely. The moment there's a test that starts past the login screen it's worth adding.
 
 **CI runs when I trigger it.** The workflow does typecheck, lint, then the smoke tests in Docker, and publishes an Allure report to GitHub Pages. On a real project it would run on every pull request, which is one line in the workflow file.
 
@@ -29,7 +29,7 @@ Left out on purpose:
 
 - Bad username/password error states
 - Any assertion about real device data
-- Clicking into Blueprints, Users and the rest. I only check that the nav links render
+- Clicking into Blueprints, Users and the rest. (any other business logic) I only check that the nav links render
 - Accessibility
 - Session persistence across reloads
 - Other MFA failure modes, like expired codes or a locked account
