@@ -33,7 +33,7 @@ Left out on purpose:
 
 - Bad username/password error states
 - Any assertion about real device data
-- Clicking into Blueprints, Users and the rest; I only check that the nav links render
+- Clicking into Blueprints, Users and the rest. I only check that the nav links render
 - Accessibility
 - Session persistence across reloads
 - Other MFA failure modes, like expired codes or a locked account
